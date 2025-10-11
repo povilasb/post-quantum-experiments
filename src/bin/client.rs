@@ -2,10 +2,10 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::Arc;
 
+
 fn main() {
     env_logger::init();
 
-    // Install the post-quantum crypto provider
     rustls_post_quantum::provider()
         .install_default()
         .unwrap();
@@ -41,18 +41,22 @@ fn main() {
         .conn
         .negotiated_cipher_suite()
         .unwrap();
-    eprintln!("Client negotiated cipher suite: {:?}", ciphersuite.suite());
+    println!("Client negotiated cipher suite: {:?}", ciphersuite.suite());
 
     let kx_group = tls
         .conn
         .negotiated_key_exchange_group()
         .unwrap();
-    eprintln!("Client negotiated key exchange group: {:?}", kx_group);
-    eprintln!();
+    println!("Client negotiated key exchange group: {:?}", kx_group);
+    println!();
 
     // Read and print response
     let mut plaintext = Vec::new();
-    tls.read_to_end(&mut plaintext).unwrap();
+    match tls.read_to_end(&mut plaintext) {
+        Ok(_) => (),
+        Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => (),
+        Err(e) => eprintln!("Error reading from server: {:?}", e),
+    }
     println!("Response from server:");
     println!("{}", String::from_utf8_lossy(&plaintext));
 }
