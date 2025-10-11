@@ -3,21 +3,19 @@ use std::net::TcpListener;
 use std::sync::Arc;
 
 use rustls::pki_types::PrivateKeyDer;
+use rcgen::{CertificateParams, KeyPair};
 
 fn main() {
     env_logger::init();
 
-    // Install the post-quantum crypto provider
     rustls_post_quantum::provider()
         .install_default()
         .unwrap();
 
-    // Generate a self-signed certificate for the server
-    let cert_key_pair = generate_self_signed_cert();
+    let cert_key_pair = make_self_signed_cert();
     let certs = vec![cert_key_pair.cert];
     let private_key = cert_key_pair.key;
 
-    // Create server configuration
     let config = rustls::ServerConfig::builder()
         .with_no_client_auth()
         .with_single_cert(certs, private_key)
@@ -93,9 +91,7 @@ struct CertKeyPair {
     key: PrivateKeyDer<'static>,
 }
 
-fn generate_self_signed_cert() -> CertKeyPair {
-    use rcgen::{CertificateParams, KeyPair};
-
+fn make_self_signed_cert() -> CertKeyPair {
     let key_pair = KeyPair::generate_for(&rcgen::PKCS_ECDSA_P256_SHA256).unwrap();
 
     let params = CertificateParams::new(vec![
