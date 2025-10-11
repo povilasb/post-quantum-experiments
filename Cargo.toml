@@ -1,0 +1,11 @@
+[package]
+name = "post-quantum-experiments"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+env_logger = "0.11.8"
+rcgen = "0.14.5"
+rustls = "0.23.32"
+rustls-post-quantum = "0.2.4"
+webpki-roots = "1.0.3"
