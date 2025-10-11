@@ -47,7 +47,7 @@ fn main() {
         .conn
         .negotiated_key_exchange_group()
         .unwrap();
-    println!("Client negotiated key exchange group: {:?}", kx_group);
+    println!("Client negotiated key exchange group: {:?}", kx_group.name());
     println!();
 
     // Read and print response

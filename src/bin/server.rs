@@ -23,7 +23,6 @@ fn main() {
 
     let listener = TcpListener::bind("127.0.0.1:8443").unwrap();
     println!("Server listening on https://127.0.0.1:8443");
-    println!("Connect with: cargo run --bin client");
     println!();
 
     for stream in listener.incoming() {
@@ -48,17 +47,16 @@ fn main() {
                         println!("  Cipher suite: {:?}", ciphersuite.suite());
 
                         if let Some(kx_group) = tls.conn.negotiated_key_exchange_group() {
-                            println!("  Key exchange group: {:?}", kx_group);
+                            println!("  Key exchange group: {:?}", kx_group.name());
                         }
 
                         // Send HTTP response
                         let response_body = format!(
                             "TLS Connection Established!\n\n\
                              Cipher Suite: {:?}\n\
-                             Key Exchange: {:?}\n\n\
-                             This server is using rustls-post-quantum for post-quantum cryptography.\n",
+                             Key Exchange: {:?}",
                             ciphersuite.suite(),
-                            tls.conn.negotiated_key_exchange_group()
+                            tls.conn.negotiated_key_exchange_group().map(|kx| kx.name())
                         );
 
                         let response = format!(
