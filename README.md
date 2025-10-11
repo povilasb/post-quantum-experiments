@@ -9,4 +9,5 @@ cargo run --bin client
 
 ## References
 
+* https://pqc.lt
 * https://pq.cloudflareresearch.com
