@@ -1,0 +1,11 @@
+[project]
+name = "post-quantum-experiments"
+version = "0.1.0"
+description = "Post quantum cryptography utils"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "cryptography>=44.0.0",
+    "rich>=14.2.0",
+    "scapy>=2.6.1",
+]
