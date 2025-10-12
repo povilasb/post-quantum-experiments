@@ -4,7 +4,8 @@ Post quantum crypto examples:
 
 ```sh
 cargo run --bin server
-cargo run --bin client
+cargo run --bin client # connects to localhost by default
+cargo run --bin client -- 192.168.1.13:8443
 ```
 
 ## Network analysis
