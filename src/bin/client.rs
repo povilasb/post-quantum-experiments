@@ -6,6 +6,14 @@ use std::sync::Arc;
 fn main() {
     env_logger::init();
 
+    // Parse target address from CLI args, default to "127.0.0.1:8443"
+    let args: Vec<String> = std::env::args().collect();
+    let target_address = if args.len() > 1 {
+        &args[1]
+    } else {
+        "127.0.0.1:8443"
+    };
+
     rustls_post_quantum::provider()
         .install_default()
         .unwrap();
@@ -20,7 +28,7 @@ fn main() {
 
     let server_name = "localhost".try_into().unwrap();
     let mut conn = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
-    let mut sock = TcpStream::connect("127.0.0.1:8443").unwrap();
+    let mut sock = TcpStream::connect(target_address).unwrap();
     let mut tls = rustls::Stream::new(&mut conn, &mut sock);
 
     // Send HTTP request

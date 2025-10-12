@@ -21,8 +21,8 @@ fn main() {
         .with_single_cert(certs, private_key)
         .expect("bad certificate/key");
 
-    let listener = TcpListener::bind("127.0.0.1:8443").unwrap();
-    println!("Server listening on https://127.0.0.1:8443");
+    let listener = TcpListener::bind("0.0.0.0:8443").unwrap();
+    println!("Server listening on https://0.0.0.0:8443");
     println!();
 
     for stream in listener.incoming() {
