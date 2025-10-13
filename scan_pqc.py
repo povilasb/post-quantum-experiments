@@ -1,8 +1,11 @@
+import subprocess
+import typing as t
+
 from scapy.layers.tls.all import TLS
 from scapy.layers.inet import IP
 from scapy.layers.tls.all import TLSClientHello, TLSServerHello
 from scapy.sessions import TCPSession
-from scapy.layers.tls.extensions import TLS_Ext_SupportedGroups, TLS_Ext_KeyShare
+from scapy.layers.tls.extensions import TLS_Ext_SupportedGroups
 from scapy.layers.tls.keyexchange_tls13 import TLS_Ext_KeyShare_SH
 from scapy.all import sniff, load_layer
 from scapy.packet import Packet
@@ -68,6 +71,12 @@ TLS_KEY_EXCHANGE_CIPHER_GROUPS = {
     0xFF02: "arbitrary_explicit_char2_curves",
 }
 
+POST_QUANTUM_SAFE = {
+    "X25519Kyber768Draft00",
+    "X25519MLKEM768",
+    "SecP256r1MLKEM768",
+}
+
 
 def main():
     load_layer("tls")
@@ -88,8 +97,13 @@ def _handle_packet(packet: Packet):
                     ]
                 )
 
+        if any(cipher in POST_QUANTUM_SAFE for cipher in key_exchange_ciphers):
+            pq_safe_tag = "[green]PQ-SAFE[/green]"
+        else:
+            pq_safe_tag = "[red]PQ-UNSAFE[/red]"
+
         rich.print(
-            f"-> CHLO: [{TLS_VERSION[tls_chlo.version]}] {ip_layer.src}:{ip_layer.sport} -> {ip_layer.dst}:{ip_layer.dport}: {key_exchange_ciphers}"
+            f"-> CHLO[{pq_safe_tag}]: [{TLS_VERSION[tls_chlo.version]}] {ip_layer.src}:{ip_layer.sport} -> {ip_layer.dst}:{ip_layer.dport}: {key_exchange_ciphers} {_get_process_by_port(ip_layer.dport, 'tcp') or ''}"
         )
 
     elif tls_server_hello := packet.getlayer(TLSServerHello):
@@ -100,9 +114,41 @@ def _handle_packet(packet: Packet):
                     extension.server_share.group, extension.server_share.group
                 )
 
+        if selected_key_exchange_cipher in POST_QUANTUM_SAFE:
+            pq_safe_tag = "[green]PQ-SAFE[/green]"
+        else:
+            pq_safe_tag = "[red]PQ-UNSAFE[/red]"
         rich.print(
-            f"<- SHLO: [{TLS_VERSION[tls_server_hello.version]}] {ip_layer.src}:{ip_layer.sport} -> {ip_layer.dst}:{ip_layer.dport}: {selected_key_exchange_cipher}"
+            f"<- SHLO[{pq_safe_tag}]: [{TLS_VERSION[tls_server_hello.version]}] {ip_layer.src}:{ip_layer.sport} -> {ip_layer.dst}:{ip_layer.dport}: {selected_key_exchange_cipher}"
         )
+
+
+def _get_process_by_port(
+    port: int, transport_proto: t.Literal["tcp", "udp"]
+) -> str | None:
+    """Get process name and PID for a given port."""
+    try:
+        # Use lsof to find the process using this port
+        # -n: no DNS resolution, -P: no port name resolution, -i: internet addresses
+        result = subprocess.run(
+            ["lsof", "-n", "-P", "-i", f"{transport_proto}:{port}"],
+            capture_output=True,
+            text=True,
+            timeout=1,
+        )
+
+        if result.returncode == 0 and result.stdout:
+            # Parse lsof output (skip header line)
+            lines = result.stdout.strip().split("\n")
+            if len(lines) > 1:
+                # Parse the first data line
+                parts = lines[1].split()
+                process_name = parts[0]
+                return f"{process_name}"
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, IndexError):
+        pass
+
+    return None
 
 
 main()
